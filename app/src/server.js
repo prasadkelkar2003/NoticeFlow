@@ -7,10 +7,11 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Prometheus Metrics Setup
+// Enable default Prometheus metrics collection
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ timeout: 5000 });
 
+// Custom Prometheus metric for tracking HTTP latency
 const httpRequestDurationMicroseconds = new client.Histogram({
   name: 'http_request_duration_ms',
   help: 'Duration of HTTP requests in ms',
@@ -18,7 +19,6 @@ const httpRequestDurationMicroseconds = new client.Histogram({
   buckets: [50, 100, 200, 300, 400, 500, 1000]
 });
 
-// Middleware to track request duration
 app.use((req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
@@ -40,7 +40,7 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'broadcast_db',
 });
 
-// Metrics Endpoint for Prometheus Scraping
+// Prometheus Metrics Scrape Endpoint
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
@@ -99,5 +99,5 @@ app.get('/api/notices', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`NoticeFlow Broadcast API running on port ${port}`);
+  console.log(`NoticeFlow API server running on port ${port}`);
 });
