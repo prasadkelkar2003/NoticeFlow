@@ -34,7 +34,6 @@
     }
     h1 { margin: 0; font-size: 1.6rem; color: var(--accent); }
     
-    /* Metrics Grid */
     .metrics-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -51,7 +50,6 @@
     .metric-val { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin: 0.3rem 0; font-family: monospace; }
     .metric-label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 
-    /* Surge Banner Box */
     .surge-panel {
       background: linear-gradient(135deg, #1e1b4b, #31102f);
       border: 1px solid #6366f1;
@@ -78,7 +76,6 @@
     .surge-btn:hover { opacity: 0.9; transform: scale(1.02); }
     .surge-btn:disabled { background: #64748b; cursor: not-allowed; }
 
-    /* Pod Clusters View */
     .pod-pool {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -101,7 +98,6 @@
     .pod-chip.active { border-color: var(--accent-green); }
     .pod-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
 
-    /* Broadcast Content Layout */
     .content-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -128,7 +124,6 @@
     textarea { resize: vertical; min-height: 80px; margin-bottom: 0.8rem; }
     .submit-btn { background: var(--accent); color: var(--bg); font-weight: 700; border: none; cursor: pointer; }
     
-    /* Notices Feed */
     .feed { display: grid; gap: 0.8rem; max-height: 400px; overflow-y: auto; }
     .notice-item {
       background: #0f172a;
@@ -154,7 +149,6 @@
       </div>
     </header>
 
-    <!-- Surge Simulation Banner -->
     <div class="surge-panel">
       <div>
         <strong style="font-size: 1.1rem;">🔥 Traffic Surge Demo: Final Exam Results</strong>
@@ -165,7 +159,6 @@
       <button id="surgeBtn" class="surge-btn" onclick="startSurgeDemo()">⚡ Publish Result & Trigger 500-User Surge</button>
     </div>
 
-    <!-- Live Performance Metrics -->
     <div class="metrics-grid">
       <div class="metric-card">
         <div class="metric-label">Live Traffic (RPS)</div>
@@ -181,7 +174,6 @@
       </div>
     </div>
 
-    <!-- Active Kubernetes Pod Instances -->
     <div class="pod-pool">
       <strong style="font-size: 0.95rem;">🛰️ Discovered Pod Instances (Serving Current Traffic)</strong>
       <div id="podChips" class="pod-chips">
@@ -189,9 +181,7 @@
       </div>
     </div>
 
-    <!-- Main Content Panels -->
     <div class="content-grid">
-      <!-- Manual Broadcast Form -->
       <div class="panel">
         <h3 style="margin-top:0;">📢 Create Notice Broadcast</h3>
         <div class="form-group">
@@ -202,7 +192,6 @@
         <button class="submit-btn" onclick="createNotice()">Send Broadcast</button>
       </div>
 
-      <!-- Live Broadcast Feed -->
       <div class="panel">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
           <h3 style="margin: 0;">📜 Published Notices</h3>
@@ -217,7 +206,6 @@
     const knownPods = new Set();
     let isSurging = false;
 
-    // Fetch Stats & Track Serving Pods
     async function updateStats() {
       const t0 = performance.now();
       try {
@@ -248,7 +236,6 @@
       `).join('');
     }
 
-    // Load Notices from Database
     async function loadNotices() {
       const tag = document.getElementById('tagFilter').value.trim();
       const endpoint = tag ? `/api/notices?tag=${encodeURIComponent(tag)}` : '/api/notices';
@@ -269,7 +256,6 @@
       } catch(e) { console.error(e); }
     }
 
-    // Create Custom Notice
     async function createNotice() {
       const title = document.getElementById('noticeTitle').value.trim();
       const targetTag = document.getElementById('noticeTag').value.trim();
@@ -287,7 +273,6 @@
       loadNotices();
     }
 
-    // Simulate Exam Result Announcement & Burst Traffic
     async function startSurgeDemo() {
       if (isSurging) return;
       isSurging = true;
@@ -295,7 +280,6 @@
       btn.disabled = true;
       btn.innerText = "🚀 Surging Traffic Active (Running 20s)...";
 
-      // 1. Post the Exam Result announcement to DB
       await fetch('/api/notices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -307,8 +291,7 @@
       });
       loadNotices();
 
-      // 2. Fire 30 concurrent async fetch workers to generate load on Kubernetes pods
-      const stopTime = Date.now() + 20000; // 20-second burst
+      const stopTime = Date.now() + 20000;
       const workers = Array(30).fill(0).map(async () => {
         while (Date.now() < stopTime) {
           try {
@@ -323,7 +306,6 @@
       isSurging = false;
     }
 
-    // Polling Intervals
     setInterval(updateStats, 1000);
     setInterval(loadNotices, 4000);
     updateStats();
