@@ -1,10 +1,36 @@
 const express = require('express');
 const { Pool } = require('pg');
+const client = require('prom-client');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Prometheus Metrics Setup
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics({ timeout: 5000 });
+
+const httpRequestDurationMicroseconds = new client.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duration of HTTP requests in ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [50, 100, 200, 300, 400, 500, 1000]
+});
+
+// Middleware to track request duration
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (req.route) {
+      httpRequestDurationMicroseconds
+        .labels(req.method, req.route.path, res.statusCode)
+        .observe(duration);
+    }
+  });
+  next();
+});
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -14,12 +40,22 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'broadcast_db',
 });
 
-// Health check endpoint for K8s Probes
+// Metrics Endpoint for Prometheus Scraping
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
+
+// Liveness Probe Endpoint
 app.get('/healthz', (req, res) => {
   res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
 
-// Readiness check endpoint (verifies DB connection)
+// Readiness Probe Endpoint
 app.get('/ready', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -63,5 +99,5 @@ app.get('/api/notices', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Notice Broadcast API running on port ${port}`);
+  console.log(`NoticeFlow Broadcast API running on port ${port}`);
 });
