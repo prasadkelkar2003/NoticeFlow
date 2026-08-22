@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoticeFlow | Broadcast Dashboard</title>
+  <style>
+    :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f8fafc; --muted: #94a3b8; }
+    body { margin: 0; padding: 2rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    .container { max-width: 900px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 1rem; margin-bottom: 2rem; }
+    h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+    .badge { background: #0369a1; color: #e0f2fe; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; font-family: monospace; }
+    .form-box { background: var(--card); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #334155; }
+    .form-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
+    input, select, textarea, button { font-family: inherit; font-size: 0.95rem; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: var(--text); padding: 0.6rem; }
+    input, select { flex: 1; }
+    textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px; margin-bottom: 1rem; }
+    button { background: var(--accent); color: #0f172a; font-weight: 600; border: none; cursor: pointer; padding: 0.6rem 1.5rem; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    .feed { display: grid; gap: 1rem; }
+    .card { background: var(--card); padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--accent); border: 1px solid #334155; }
+    .card-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .card-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .card-msg { color: #cbd5e1; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>NoticeFlow Console</h1>
+        <small style="color: var(--muted);">Cloud-Native Notice Broadcast System</small>
+      </div>
+      <div id="pod-badge" class="badge">Node: Loading...</div>
+    </header>
+
+    <div class="form-box">
+      <h3 style="margin-top:0;">Broadcast New Notice</h3>
+      <div class="form-group">
+        <input type="text" id="title" placeholder="Notice Title (e.g. Extra Class)" required>
+        <input type="text" id="tag" placeholder="Target Tag (e.g. devops-morning)" required>
+      </div>
+      <textarea id="message" placeholder="Enter broadcast message details..." required></textarea>
+      <button onclick="postNotice()">Send Broadcast</button>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <h3>Recent Broadcasts</h3>
+      <input type="text" id="filterTag" placeholder="Filter by tag..." onkeyup="fetchNotices()" style="max-width:200px;">
+    </div>
+    <div id="feed" class="feed"></div>
+  </div>
+
+  <script>
+    async function getHealth() {
+      try {
+        const res = await fetch('/healthz');
+        const data = await res.json();
+        document.getElementById('pod-badge').innerText = `Instance: ${data.hostname || 'K8s Pod'}`;
+      } catch (e) {
+        document.getElementById('pod-badge').innerText = 'Offline';
+      }
+    }
+
+    async function fetchNotices() {
+      const tag = document.getElementById('filterTag').value.trim();
+      const url = tag ? `/api/notices?tag=${encodeURIComponent(tag)}` : '/api/notices';
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const feed = document.getElementById('feed');
+        feed.innerHTML = (data.notices || []).map(n => `
+          <div class="card">
+            <div class="card-meta">
+              <span class="badge">${n.target_tag}</span>
+              <span>${new Date(n.created_at).toLocaleString()}</span>
+            </div>
+            <div class="card-title">${n.title}</div>
+            <div class="card-msg">${n.message}</div>
+          </div>
+        `).join('');
+      } catch(e) { console.error(e); }
+    }
+
+    async function postNotice() {
+      const title = document.getElementById('title').value;
+      const targetTag = document.getElementById('tag').value;
+      const message = document.getElementById('message').value;
+      if(!title || !targetTag || !message) return alert("Fill all fields");
+
+      await fetch('/api/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, targetTag, message })
+      });
+      document.getElementById('title').value = '';
+      document.getElementById('tag').value = '';
+      document.getElementById('message').value = '';
+      fetchNotices();
+    }
+
+    getHealth();
+    fetchNotices();
+    setInterval(fetchNotices, 4000);
+  </script>
+</body>
+</html>
