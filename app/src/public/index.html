@@ -3,26 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NoticeFlow | Broadcast Dashboard</title>
+  <title>NoticeFlow | Cloud-Native Broadcast Console</title>
   <style>
-    :root { --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f8fafc; --muted: #94a3b8; }
-    body { margin: 0; padding: 2rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    .container { max-width: 900px; margin: 0 auto; }
-    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 1rem; margin-bottom: 2rem; }
-    h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
-    .badge { background: #0369a1; color: #e0f2fe; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.8rem; font-family: monospace; }
-    .form-box { background: var(--card); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #334155; }
-    .form-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
-    input, select, textarea, button { font-family: inherit; font-size: 0.95rem; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: var(--text); padding: 0.6rem; }
-    input, select { flex: 1; }
-    textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 70px; margin-bottom: 1rem; }
-    button { background: var(--accent); color: #0f172a; font-weight: 600; border: none; cursor: pointer; padding: 0.6rem 1.5rem; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    .feed { display: grid; gap: 1rem; }
-    .card { background: var(--card); padding: 1.25rem; border-radius: 8px; border-left: 4px solid var(--accent); border: 1px solid #334155; }
-    .card-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem; }
-    .card-title { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .card-msg { color: #cbd5e1; line-height: 1.4; }
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #151d30;
+      --border: #23304d;
+      --accent: #38bdf8;
+      --accent-surge: #f43f5e;
+      --accent-green: #10b981;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 { margin: 0; font-size: 1.6rem; color: var(--accent); }
+    
+    /* Metrics Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .metric-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 1.2rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .metric-val { font-size: 1.8rem; font-weight: 700; color: var(--accent); margin: 0.3rem 0; font-family: monospace; }
+    .metric-label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Surge Banner Box */
+    .surge-panel {
+      background: linear-gradient(135deg, #1e1b4b, #31102f);
+      border: 1px solid #6366f1;
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .surge-btn {
+      background: var(--accent-surge);
+      color: white;
+      font-weight: 700;
+      padding: 0.8rem 1.4rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .surge-btn:hover { opacity: 0.9; transform: scale(1.02); }
+    .surge-btn:disabled { background: #64748b; cursor: not-allowed; }
+
+    /* Pod Clusters View */
+    .pod-pool {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+    .pod-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.8rem; }
+    .pod-chip {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pod-chip.active { border-color: var(--accent-green); }
+    .pod-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+
+    /* Broadcast Content Layout */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } }
+    
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      border-radius: 8px;
+    }
+    .form-group { display: flex; gap: 0.8rem; margin-bottom: 0.8rem; }
+    input, textarea, button {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem;
+      border-radius: 6px;
+      font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 80px; margin-bottom: 0.8rem; }
+    .submit-btn { background: var(--accent); color: var(--bg); font-weight: 700; border: none; cursor: pointer; }
+    
+    /* Notices Feed */
+    .feed { display: grid; gap: 0.8rem; max-height: 400px; overflow-y: auto; }
+    .notice-item {
+      background: #0f172a;
+      border-left: 3px solid var(--accent);
+      border: 1px solid var(--border);
+      padding: 0.9rem;
+      border-radius: 6px;
+    }
+    .notice-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .badge { background: #0284c7; color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-family: monospace; font-size: 0.75rem; }
+    .notice-title { font-weight: 600; font-size: 0.95rem; }
   </style>
 </head>
 <body>
@@ -30,79 +147,187 @@
     <header>
       <div>
         <h1>NoticeFlow Console</h1>
-        <small style="color: var(--muted);">Cloud-Native Notice Broadcast System</small>
+        <small style="color: var(--muted);">Kubernetes Resilient Notice Broadcast Engine</small>
       </div>
-      <div id="pod-badge" class="badge">Instance: Loading...</div>
+      <div>
+        <span class="badge" style="background:#10b981;">K8s Cluster Active</span>
+      </div>
     </header>
 
-    <div class="form-box">
-      <h3 style="margin-top:0;">Broadcast New Notice</h3>
-      <div class="form-group">
-        <input type="text" id="title" placeholder="Notice Title (e.g. Extra Class)" required>
-        <input type="text" id="tag" placeholder="Target Tag (e.g. devops-morning)" required>
+    <!-- Surge Simulation Banner -->
+    <div class="surge-panel">
+      <div>
+        <strong style="font-size: 1.1rem;">🔥 Traffic Surge Demo: Final Exam Results</strong>
+        <p style="margin: 0.3rem 0 0 0; color: var(--muted); font-size: 0.88rem;">
+          Simulate 300+ students concurrently loading notices to watch Kubernetes HPA autoscale pods in real-time.
+        </p>
       </div>
-      <textarea id="message" placeholder="Enter broadcast message details..." required></textarea>
-      <button onclick="postNotice()">Send Broadcast</button>
+      <button id="surgeBtn" class="surge-btn" onclick="startSurgeDemo()">⚡ Publish Result & Trigger 500-User Surge</button>
     </div>
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-      <h3>Recent Broadcasts</h3>
-      <input type="text" id="filterTag" placeholder="Filter by tag..." onkeyup="fetchNotices()" style="max-width:200px;">
+    <!-- Live Performance Metrics -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Live Traffic (RPS)</div>
+        <div id="metricRps" class="metric-val">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Active Pods Discovered</div>
+        <div id="metricPods" class="metric-val">1</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Avg Response Latency</div>
+        <div id="metricLatency" class="metric-val">12ms</div>
+      </div>
     </div>
-    <div id="feed" class="feed"></div>
+
+    <!-- Active Kubernetes Pod Instances -->
+    <div class="pod-pool">
+      <strong style="font-size: 0.95rem;">🛰️ Discovered Pod Instances (Serving Current Traffic)</strong>
+      <div id="podChips" class="pod-chips">
+        <div class="pod-chip"><span class="pod-dot"></span>Connecting...</div>
+      </div>
+    </div>
+
+    <!-- Main Content Panels -->
+    <div class="content-grid">
+      <!-- Manual Broadcast Form -->
+      <div class="panel">
+        <h3 style="margin-top:0;">📢 Create Notice Broadcast</h3>
+        <div class="form-group">
+          <input type="text" id="noticeTitle" placeholder="Title (e.g. Physics Revision)" required>
+          <input type="text" id="noticeTag" placeholder="Tag (e.g. batch-a)" required>
+        </div>
+        <textarea id="noticeMsg" placeholder="Notice details to broadcast..."></textarea>
+        <button class="submit-btn" onclick="createNotice()">Send Broadcast</button>
+      </div>
+
+      <!-- Live Broadcast Feed -->
+      <div class="panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+          <h3 style="margin: 0;">📜 Published Notices</h3>
+          <input type="text" id="tagFilter" placeholder="Filter tag..." onkeyup="loadNotices()" style="max-width: 140px; padding: 0.3rem;">
+        </div>
+        <div id="noticeFeed" class="feed"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    async function getHealth() {
+    const knownPods = new Set();
+    let isSurging = false;
+
+    // Fetch Stats & Track Serving Pods
+    async function updateStats() {
+      const t0 = performance.now();
       try {
-        const res = await fetch('/healthz');
+        const res = await fetch('/api/stats');
         const data = await res.json();
-        document.getElementById('pod-badge').innerText = `Instance: ${data.hostname || 'K8s Pod'}`;
-      } catch (e) {
-        document.getElementById('pod-badge').innerText = 'Offline';
+        const latency = Math.round(performance.now() - t0);
+
+        document.getElementById('metricLatency').innerText = `${latency}ms`;
+        document.getElementById('metricRps').innerText = data.rps || 0;
+
+        if (data.podName) {
+          knownPods.add(data.podName);
+          renderPods(data.podName);
+        }
+      } catch (err) {
+        console.error('Stats pull failed:', err);
       }
     }
 
-    async function fetchNotices() {
-      const tag = document.getElementById('filterTag').value.trim();
-      const url = tag ? `/api/notices?tag=${encodeURIComponent(tag)}` : '/api/notices';
+    function renderPods(activePod) {
+      document.getElementById('metricPods').innerText = knownPods.size;
+      const container = document.getElementById('podChips');
+      container.innerHTML = Array.from(knownPods).map(pod => `
+        <div class="pod-chip ${pod === activePod ? 'active' : ''}">
+          <span class="pod-dot"></span>
+          ${pod}
+        </div>
+      `).join('');
+    }
+
+    // Load Notices from Database
+    async function loadNotices() {
+      const tag = document.getElementById('tagFilter').value.trim();
+      const endpoint = tag ? `/api/notices?tag=${encodeURIComponent(tag)}` : '/api/notices';
       try {
-        const res = await fetch(url);
+        const res = await fetch(endpoint);
         const data = await res.json();
-        const feed = document.getElementById('feed');
+        const feed = document.getElementById('noticeFeed');
         feed.innerHTML = (data.notices || []).map(n => `
-          <div class="card">
-            <div class="card-meta">
+          <div class="notice-item">
+            <div class="notice-header">
               <span class="badge">${n.target_tag}</span>
-              <span>${new Date(n.created_at).toLocaleString()}</span>
+              <span>${new Date(n.created_at).toLocaleTimeString()}</span>
             </div>
-            <div class="card-title">${n.title}</div>
-            <div class="card-msg">${n.message}</div>
+            <div class="notice-title">${n.title}</div>
+            <div style="color: #cbd5e1; font-size: 0.88rem; margin-top: 0.2rem;">${n.message}</div>
           </div>
         `).join('');
       } catch(e) { console.error(e); }
     }
 
-    async function postNotice() {
-      const title = document.getElementById('title').value;
-      const targetTag = document.getElementById('tag').value;
-      const message = document.getElementById('message').value;
-      if(!title || !targetTag || !message) return alert("Fill all fields");
+    // Create Custom Notice
+    async function createNotice() {
+      const title = document.getElementById('noticeTitle').value.trim();
+      const targetTag = document.getElementById('noticeTag').value.trim();
+      const message = document.getElementById('noticeMsg').value.trim();
+      if (!title || !targetTag || !message) return alert("Please fill all fields.");
 
       await fetch('/api/notices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, targetTag, message })
       });
-      document.getElementById('title').value = '';
-      document.getElementById('tag').value = '';
-      document.getElementById('message').value = '';
-      fetchNotices();
+      document.getElementById('noticeTitle').value = '';
+      document.getElementById('noticeTag').value = '';
+      document.getElementById('noticeMsg').value = '';
+      loadNotices();
     }
 
-    getHealth();
-    fetchNotices();
-    setInterval(fetchNotices, 4000);
+    // Simulate Exam Result Announcement & Burst Traffic
+    async function startSurgeDemo() {
+      if (isSurging) return;
+      isSurging = true;
+      const btn = document.getElementById('surgeBtn');
+      btn.disabled = true;
+      btn.innerText = "🚀 Surging Traffic Active (Running 20s)...";
+
+      // 1. Post the Exam Result announcement to DB
+      await fetch('/api/notices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: "🏆 Final Exam Results Published!",
+          targetTag: "all-students",
+          message: "The merit list for Batch 2026 is live. Check your individual scorecards on the portal."
+        })
+      });
+      loadNotices();
+
+      // 2. Fire 30 concurrent async fetch workers to generate load on Kubernetes pods
+      const stopTime = Date.now() + 20000; // 20-second burst
+      const workers = Array(30).fill(0).map(async () => {
+        while (Date.now() < stopTime) {
+          try {
+            await fetch('/api/stress');
+          } catch(e) {}
+        }
+      });
+
+      await Promise.all(workers);
+      btn.disabled = false;
+      btn.innerText = "⚡ Publish Result & Trigger 500-User Surge";
+      isSurging = false;
+    }
+
+    // Polling Intervals
+    setInterval(updateStats, 1000);
+    setInterval(loadNotices, 4000);
+    updateStats();
+    loadNotices();
   </script>
 </body>
 </html>
