@@ -1,11 +1,16 @@
 const express = require('express');
 const { Pool } = require('pg');
 const client = require('prom-client');
+const os = require('os');
+const path = require('path');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Serve static UI dashboard
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Enable default Prometheus metrics collection
 const collectDefaultMetrics = client.collectDefaultMetrics;
@@ -50,9 +55,13 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
-// Liveness Probe Endpoint
+// Liveness Probe Endpoint (Includes Pod Hostname for demo)
 app.get('/healthz', (req, res) => {
-  res.status(200).json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'healthy',
+    hostname: os.hostname(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Readiness Probe Endpoint
