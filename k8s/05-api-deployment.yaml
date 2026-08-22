@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: api
-          image: prasadkelkar2003/notice-flow-api:latest
-          imagePullPolicy: IfNotPresent
+          image: prad2003/notice-flow-api:v2
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
               name: http
