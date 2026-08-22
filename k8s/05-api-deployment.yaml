@@ -22,8 +22,8 @@ spec:
     spec:
       containers:
         - name: api
-          image: prad2003/notice-flow-api:v2
-          imagePullPolicy: Always
+          image: prad2003/notice-flow-api:v3
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               name: http
@@ -74,13 +74,13 @@ spec:
             httpGet:
               path: /healthz
               port: 3000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /ready
               port: 3000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 3
             periodSeconds: 5
 ---
 apiVersion: v1
