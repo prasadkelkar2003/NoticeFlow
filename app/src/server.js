@@ -9,14 +9,19 @@ const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Serve static UI dashboard
+// Serve static frontend dashboard
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Enable default Prometheus metrics collection
+// Prometheus Metrics Setup
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ timeout: 5000 });
 
-// Custom Prometheus metric for tracking HTTP latency
+const httpRequestCounter = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'code']
+});
+
 const httpRequestDurationMicroseconds = new client.Histogram({
   name: 'http_request_duration_ms',
   help: 'Duration of HTTP requests in ms',
@@ -24,11 +29,21 @@ const httpRequestDurationMicroseconds = new client.Histogram({
   buckets: [50, 100, 200, 300, 400, 500, 1000]
 });
 
+// Real-time Traffic Tracking
+let requestCountWindow = 0;
+let lastRps = 0;
+setInterval(() => {
+  lastRps = requestCountWindow;
+  requestCountWindow = 0;
+}, 1000);
+
 app.use((req, res, next) => {
+  requestCountWindow++;
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
     if (req.route) {
+      httpRequestCounter.inc({ method: req.method, route: req.route.path, code: res.statusCode });
       httpRequestDurationMicroseconds
         .labels(req.method, req.route.path, res.statusCode)
         .observe(duration);
@@ -45,7 +60,7 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'broadcast_db',
 });
 
-// Prometheus Metrics Scrape Endpoint
+// Metrics Endpoint
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
@@ -55,7 +70,7 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
-// Liveness Probe Endpoint (Includes Pod Hostname for demo)
+// Health Checks
 app.get('/healthz', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -64,7 +79,6 @@ app.get('/healthz', (req, res) => {
   });
 });
 
-// Readiness Probe Endpoint
 app.get('/ready', async (req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -74,7 +88,28 @@ app.get('/ready', async (req, res) => {
   }
 });
 
-// Create and broadcast notice
+// Real-time Cluster Stats for Dashboard UI
+app.get('/api/stats', (req, res) => {
+  res.status(200).json({
+    podName: os.hostname(),
+    rps: lastRps,
+    cpuLoad: os.loadavg()[0],
+    memoryFreeMb: Math.round(os.freemem() / 1024 / 1024),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// CPU Stress Endpoint (Used by Traffic Surge Simulator)
+app.get('/api/stress', (req, res) => {
+  const start = Date.now();
+  // Burn CPU cycles for 15ms per request to trigger HPA
+  while (Date.now() - start < 15) {
+    Math.sqrt(Math.random() * 1000000);
+  }
+  res.status(200).json({ status: 'processed', pod: os.hostname() });
+});
+
+// Broadcast Notices
 app.post('/api/notices', async (req, res) => {
   const { title, message, targetTag, scheduledAt } = req.body;
   try {
@@ -91,7 +126,7 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
-// List notices by tag
+// List Notices
 app.get('/api/notices', async (req, res) => {
   const { tag } = req.query;
   try {
@@ -108,5 +143,5 @@ app.get('/api/notices', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`NoticeFlow API server running on port ${port}`);
+  console.log(`NoticeFlow Broadcast API running on port ${port}`);
 });
