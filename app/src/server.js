@@ -8,11 +8,8 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-
-// Serve static frontend dashboard
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Prometheus Metrics Setup
 const collectDefaultMetrics = client.collectDefaultMetrics;
 collectDefaultMetrics({ timeout: 5000 });
 
@@ -29,7 +26,6 @@ const httpRequestDurationMicroseconds = new client.Histogram({
   buckets: [50, 100, 200, 300, 400, 500, 1000]
 });
 
-// Real-time Traffic Tracking
 let requestCountWindow = 0;
 let lastRps = 0;
 setInterval(() => {
@@ -60,7 +56,6 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'broadcast_db',
 });
 
-// Metrics Endpoint
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
@@ -70,7 +65,6 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
-// Health Checks
 app.get('/healthz', (req, res) => {
   res.status(200).json({
     status: 'healthy',
@@ -88,7 +82,6 @@ app.get('/ready', async (req, res) => {
   }
 });
 
-// Real-time Cluster Stats for Dashboard UI
 app.get('/api/stats', (req, res) => {
   res.status(200).json({
     podName: os.hostname(),
@@ -99,17 +92,14 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-// CPU Stress Endpoint (Used by Traffic Surge Simulator)
 app.get('/api/stress', (req, res) => {
   const start = Date.now();
-  // Burn CPU cycles for 15ms per request to trigger HPA
   while (Date.now() - start < 15) {
     Math.sqrt(Math.random() * 1000000);
   }
   res.status(200).json({ status: 'processed', pod: os.hostname() });
 });
 
-// Broadcast Notices
 app.post('/api/notices', async (req, res) => {
   const { title, message, targetTag, scheduledAt } = req.body;
   try {
@@ -126,7 +116,6 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
-// List Notices
 app.get('/api/notices', async (req, res) => {
   const { tag } = req.query;
   try {
@@ -140,6 +129,10 @@ app.get('/api/notices', async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(port, () => {
