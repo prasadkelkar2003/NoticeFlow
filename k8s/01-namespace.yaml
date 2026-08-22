@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: noticeflow
+  labels:
+    app.kubernetes.io/name: noticeflow
+    app.kubernetes.io/part-of: smart-broadcast
